@@ -1,29 +1,23 @@
-# NB: don't set `language: haskell` here
-
-# The following enables several GHC versions to be tested; often it's enough to test only against the last release in a major GHC version. Feel free to omit lines listings versions you don't need/want testing for.
-env:
-# - GHCVER=6.12.3
- - CABALVER=1.16 GHCVER=7.4.2
- - CABALVER=1.18 GHCVER=7.6.3
- - CABALVER=1.18 GHCVER=7.8.4 # see note about Alex/Happy
-# - CABALVER=1.22 GHCVER=7.10.1
-# - GHCVER=head  # see section about GHC HEAD snapshots
-
-# Note: the distinction between `before_install` and `install` is not important.
+language: haskell
+sudo: false
+ghc: 7.8
+after_success:
+- find . -type f
+- chmod 600 id_rsa.polysquare-builder
+- mkdir -p ~/.ssh
+- mv id_rsa.polysquare-builder.pub ~/.ssh/id_rsa.pub
+- mv id_rsa.polysquare-builder ~/.ssh/id_rsa
+- git clone git@github.com:polysquare-builds/polysquare-haskell-builds
+- host_dir=$(curl -LSs "http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD"
+  | bash)
+- mkdir -p "polysquare-haskell-builds/${host_dir}"
+- cp "dist/build/pandoc/pandoc" "polysquare-haskell-builds/${host_dir}/pandoc"
+- cd polysquare-haskell-builds
+- git add "${host_dir}/pandoc"
+- git config user.email "polysquare.builder@gmail.com"
+- git config user.name "Polysquare Automated Builder"
+- git commit -a -m "Automated update of pandoc'"
+- git push origin master
 before_install:
- - travis_retry sudo add-apt-repository -y ppa:hvr/ghc
- - travis_retry sudo apt-get update
- - travis_retry sudo apt-get install cabal-install-$CABALVER ghc-$GHCVER
- - export PATH=/opt/ghc/$GHCVER/bin:$PATH
-
-install:
- - cabal-$CABALVER update
-# - git clone https://github.com/jgm/pandoc-types && cd pandoc-types && cabal-1.18 install && cd ..
- - cabal-$CABALVER install --only-dependencies --enable-tests
-
-# Here starts the actual work to be performed for the package under test; any command which exits with a non-zero exit code causes the build to fail.
-script:
- - cabal-$CABALVER configure --enable-tests -v2  # -v2 provides useful information for debugging
- - cabal-$CABALVER build  --ghc-options=-Werror # this builds all libraries and executables (including tests/benchmarks)
- - cabal-$CABALVER test
- - cabal-$CABALVER check
+- openssl aes-256-cbc -K $encrypted_48e62671dfb2_key -iv $encrypted_48e62671dfb2_iv
+  -in id_rsa.polysquare-builder.enc -out id_rsa.polysquare-builder -d
